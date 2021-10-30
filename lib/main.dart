@@ -48,7 +48,7 @@ class _MainPageState extends State<MainPage> {
                   textStyle: TextStyle(fontSize: 20),
                 ),
                 onPressed: showSheet,
-                child: Text('Open Style Sheet'))),
+                child: Text('Open S tyle Sheet'))),
       );
 
   Future showSheet() => showSlidingBottomSheet(context,
