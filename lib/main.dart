@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -25,11 +26,12 @@ class MainPage extends StatefulWidget {
   _MainPageState createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
-  bool _visibleBox = false;
+StreamController<bool> controller = StreamController.broadcast();
 
+class _MainPageState extends State<MainPage> {
   final double sSize = 0.4;
   final bSize = 0.7;
+
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -52,42 +54,41 @@ class _MainPageState extends State<MainPage> {
                   padding: EdgeInsets.all(20),
                   textStyle: TextStyle(fontSize: 20),
                 ),
-                onPressed: showSheet,
+               onPressed: (){
+                  showSheet(context);
+               },
                 child: Text('Open S tyle Sheet'))),
       );
 
-  Future showSheet() => showSlidingBottomSheet(context,
+  Future showSheet(BuildContext context) => showSlidingBottomSheet(context,
       builder: (context) => SlidingSheetDialog(
-          avoidStatusBar: true,
-          cornerRadius: 30,
-          minHeight: 210,
-          builder: buildSheet,
-          isDismissable: false,
-          snapSpec: SnapSpec(
-            initialSnap: sSize,
-            snap: true,
-            snappings: [sSize, bSize],
-            onSnap: (state, snap) {
-              print('Snapped to $snap');
-              setState(() {
-              if(snap == sSize){
-                _visibleBox = false;
-                print('Snapped to false');
-              }
-              if(snap == bSize){
-                _visibleBox = true;
-                print('Snapped to true');
-              }
-              if(snap != sSize && snap != bSize){
-                _visibleBox = false;
-                print('Snapped to false');
-              }
-              });
-            },
-          ),
-          headerBuilder: buildHeader));
+            avoidStatusBar: true,
+            cornerRadius: 30,
+            minHeight: 210,
+            isDismissable: true,
+            snapSpec: SnapSpec(
+              initialSnap: sSize,
+              snap: true,
+              snappings: [sSize, bSize],
+              onSnap: (state, snap) {
+                controller.add(state.isExpanded);
+              },
+            ),
+            headerBuilder: (context, state) => Material(
+              color: Theme.of(context).primaryColor,
+              child: buildHeader(context, state),
+            ),
+            footerBuilder: (ctx, state) => Material(
+              color: Theme.of(context).primaryColor,
+              child: buildFooter(context, state),
+            ),
+            builder: (context, state) => Material(
+              color: Theme.of(context).primaryColor,
+              child: buildBody(context, state),
+            ),
+      ));
 
-  Widget buildSheet(context, state) => Material(
+  Widget buildBody(context, state) => Material(
         child: ListView(
           shrinkWrap: true,
           primary: false,
@@ -104,13 +105,6 @@ class _MainPageState extends State<MainPage> {
               child: Text('Close'),
             ),
             SizedBox(height: 20),
-            _visibleBox
-                ? Container(
-                  width: 200.0,
-                  height: 200.0,
-                  color: Colors.green,
-                )
-                : Container(),
             Text(
               'This is a sheet. There are two kinds of bottom sheets in material design: Persistent. A persistent bottom sheet shows information that supplements the primary content of the app. A persistent bottom sheet remains visible even when the user interacts with other parts of the app. Persistent bottom sheets can be created and displayed with the ScaffoldState.showBottomSheet function or by specifying the Scaffold.bottomSheet constructor parameter. Modal. A modal bottom sheet is an alternative to a menu or a dialog and prevents the user from interacting with the rest of the app. Modal bottom sheets can be created and displayed with the showModalBottomSheet function.',
               style: TextStyle(fontSize: 18),
@@ -137,4 +131,48 @@ class _MainPageState extends State<MainPage> {
           ]),
         ),
       );
+
+
+  Widget buildFooter(BuildContext context, SheetState state) {
+    return  StreamBuilder<Object>(
+      stream: controller.stream ,
+      builder: (context, snapshot) {
+        return Material(
+          child: snapshot.data == true ? Container(
+            color: Colors.blue,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              SizedBox(height: 20), Center(
+                child: Container(
+                    width: 32,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white,
+                    )),
+              ),
+              SizedBox(height: 20),
+            ]),
+          ) : Container(
+            color: Colors.red,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              SizedBox(height: 20), Center(
+                child: Container(
+                    width: 32,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white,
+                    )),
+              ),
+              SizedBox(height: 20),
+            ]),
+          ),
+        );
+      }
+    ) ;
+  }
+
+  bool transform(SheetState state){
+    return state.isExpanded;
+  }
 }
